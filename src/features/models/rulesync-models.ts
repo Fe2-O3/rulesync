@@ -73,31 +73,22 @@ const ModelsDefaultSchema = z.object({
   model: z.string(),
 });
 
+// Tool-scoped override block (preferred over a `targets` field):
+// `{ "opencode": { default: {...}, providers: {...} } }`. A named provider
+// replaces the shared one wholesale for that tool.
+const toolScopedModelsSchema = z.looseObject({
+  default: z.optional(ModelsDefaultSchema),
+  providers: z.optional(z.record(z.string(), RulesyncModelProviderSchema)),
+});
+
 export const RulesyncModelsFileSchema = z.looseObject({
   $schema: z.optional(z.string()),
   providers: z.record(z.string(), RulesyncModelProviderSchema),
   default: z.optional(ModelsDefaultSchema),
-  // Tool-scoped override blocks (preferred over a `targets` field):
-  // `{ "opencode": { default: {...}, providers: {...} } }`.
-  // A named provider replaces the shared one wholesale for that tool.
-  opencode: z.optional(
-    z.looseObject({
-      default: z.optional(ModelsDefaultSchema),
-      providers: z.optional(z.record(z.string(), RulesyncModelProviderSchema)),
-    }),
-  ),
-  crush: z.optional(
-    z.looseObject({
-      default: z.optional(ModelsDefaultSchema),
-      providers: z.optional(z.record(z.string(), RulesyncModelProviderSchema)),
-    }),
-  ),
-  hermesagent: z.optional(
-    z.looseObject({
-      default: z.optional(ModelsDefaultSchema),
-      providers: z.optional(z.record(z.string(), RulesyncModelProviderSchema)),
-    }),
-  ),
+  opencode: z.optional(toolScopedModelsSchema),
+  crush: z.optional(toolScopedModelsSchema),
+  zed: z.optional(toolScopedModelsSchema),
+  hermesagent: z.optional(toolScopedModelsSchema),
 });
 
 export type RulesyncModel = z.infer<typeof RulesyncModelSchema>;
@@ -230,7 +221,7 @@ export function forTargetModelConfig({
   toolTarget,
 }: {
   config: RulesyncModelsFile;
-  toolTarget: "opencode" | "hermesagent" | "crush";
+  toolTarget: "opencode" | "hermesagent" | "crush" | "zed";
 }): { providers: Record<string, RulesyncModelProvider>; default?: ModelsDefault } {
   const override = config[toolTarget];
   const providers: Record<string, RulesyncModelProvider> = {

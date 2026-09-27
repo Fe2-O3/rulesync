@@ -131,7 +131,12 @@ export const mcpProcessorToolTargetTuple = [
   "zoocode",
 ] as const;
 
-export const modelsProcessorToolTargetTuple = ["opencode", "hermesagent", "crush"] as const;
+export const modelsProcessorToolTargetTuple = [
+  "opencode",
+  "hermesagent",
+  "crush",
+  "zed",
+] as const;
 
 export const commandsProcessorToolTargetTuple = [
   "agentsmd",

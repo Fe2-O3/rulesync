@@ -106,12 +106,41 @@ describe("e2e: models", () => {
     expect(written.models.large).toEqual({ provider: "local", model: "ollama/qwen3-coder:30b" });
   });
 
+  it("generates Zed providers from models.jsonc", async () => {
+    const testDir = getTestDir();
+    await writeFileContent(
+      join(testDir, ".rulesync", "models.jsonc"),
+      JSON.stringify({
+        providers: {
+          local: {
+            api: "http://127.0.0.1:5678/v1",
+            models: {
+              "ollama/qwen3-coder:30b": {
+                id: "ollama/qwen3-coder:30b",
+                limit: { context: 131072 },
+              },
+            },
+          },
+        },
+      }),
+    );
+
+    await runGenerate({ target: "zed", features: "models" });
+
+    const written = JSON.parse(
+      await readFileContent(join(testDir, ".zed", "settings.json")),
+    );
+    expect(
+      written.language_models.openai_compatible.local.available_models[0],
+    ).toMatchObject({ name: "ollama/qwen3-coder:30b", max_tokens: 131072 });
+  });
+
   it("covers every models target in the generate matrix", () => {
     // hermesagent is global-only, so it is covered by the global test below
     // rather than this project-scope matrix.
     assertGenerateMatrixCoversTargets({
       processor: ModelsProcessor,
-      testedTargets: ["opencode", "crush"],
+      testedTargets: ["opencode", "crush", "zed"],
     });
   });
 });

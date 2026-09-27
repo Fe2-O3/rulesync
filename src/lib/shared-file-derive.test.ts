@@ -177,6 +177,7 @@ describe("shared-file write derivation", () => {
         ".config/zed/settings.json": [
           "ignore",
           "mcp",
+          "models",
           "permissions",
         ],
         ".grok/config.toml": [
@@ -241,6 +242,7 @@ describe("shared-file write derivation", () => {
         ".zed/settings.json": [
           "ignore",
           "mcp",
+          "models",
           "permissions",
         ],
         "AppData/Local/hermes/config.yaml": [
@@ -254,6 +256,7 @@ describe("shared-file write derivation", () => {
         "AppData/Roaming/Zed/settings.json": [
           "ignore",
           "mcp",
+          "models",
           "permissions",
         ],
         "config.toml": [

@@ -10,6 +10,7 @@ import { formatError } from "../../utils/error.js";
 import type { Logger } from "../../utils/logger.js";
 import { CrushModels } from "./crush-models.js";
 import { HermesModels } from "./hermesagent-models.js";
+import { ZedModels } from "./zed-models.js";
 import { OpencodeModels } from "./opencode-models.js";
 import { RulesyncModels } from "./rulesync-models.js";
 import {
@@ -53,6 +54,13 @@ export const toolModelsFactories = new Map<ModelsProcessorToolTarget, ToolModels
     "crush",
     {
       class: CrushModels,
+      meta: { supportsProject: true, supportsGlobal: true },
+    },
+  ],
+  [
+    "zed",
+    {
+      class: ZedModels,
       meta: { supportsProject: true, supportsGlobal: true },
     },
   ],

@@ -1415,6 +1415,7 @@ export const SHARED_CONFIG_OWNERSHIP: Readonly<Record<string, SharedConfigFileDe
     features: {
       ignore: { kind: "replace-owned-keys", ownedKeys: ["private_files"] },
       mcp: { kind: "replace-owned-keys", ownedKeys: ["context_servers"] },
+      models: { kind: "replace-owned-keys", ownedKeys: ["language_models"] },
       permissions: { kind: "replace-owned-keys", ownedKeys: ["agent"] },
     },
   },
@@ -1425,6 +1426,7 @@ export const SHARED_CONFIG_OWNERSHIP: Readonly<Record<string, SharedConfigFileDe
     features: {
       ignore: { kind: "replace-owned-keys", ownedKeys: ["private_files"] },
       mcp: { kind: "replace-owned-keys", ownedKeys: ["context_servers"] },
+      models: { kind: "replace-owned-keys", ownedKeys: ["language_models"] },
       permissions: { kind: "replace-owned-keys", ownedKeys: ["agent"] },
     },
   },
@@ -1435,6 +1437,7 @@ export const SHARED_CONFIG_OWNERSHIP: Readonly<Record<string, SharedConfigFileDe
     features: {
       ignore: { kind: "replace-owned-keys", ownedKeys: ["private_files"] },
       mcp: { kind: "replace-owned-keys", ownedKeys: ["context_servers"] },
+      models: { kind: "replace-owned-keys", ownedKeys: ["language_models"] },
       permissions: { kind: "replace-owned-keys", ownedKeys: ["agent"] },
     },
   },

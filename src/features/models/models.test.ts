@@ -7,6 +7,7 @@ import { setupTestDirectory } from "../../test-utils/test-directories.js";
 import { ensureDir, readFileContent, writeFileContent } from "../../utils/file.js";
 import { CrushModels } from "./crush-models.js";
 import { HermesModels } from "./hermesagent-models.js";
+import { ZedModels } from "./zed-models.js";
 import { ModelsProcessor } from "./models-processor.js";
 import {
   OpencodeModels,
@@ -196,11 +197,28 @@ describe("models", () => {
     expect(rulesyncFiles).toHaveLength(1);
   });
 
+  it("writes Zed providers without keys and skips models lacking context", async () => {
+    const toolModels = await ZedModels.fromRulesyncModels({
+      outputRoot: testDir,
+      rulesyncModels: rulesyncModels(testDir),
+      logger: createMockLogger(),
+    });
+    const written = JSON.parse(toolModels.getFileContent());
+    const provider = written.language_models.openai_compatible.local;
+    expect(provider.api_url).toBe("http://127.0.0.1:5678/v1");
+    expect(provider.api_key).toBeUndefined();
+    expect(provider.available_models[0]).toMatchObject({
+      name: "ollama/qwen3-coder:30b",
+      max_tokens: 131072,
+    });
+  });
+
   it("supports opencode and rejects other targets", () => {
     expect(ModelsProcessor.getToolTargets({ global: true })).toEqual([
       "opencode",
       "hermesagent",
       "crush",
+      "zed",
     ]);
     expect(() => new ModelsProcessor({ toolTarget: "cursor", logger: createMockLogger() })).toThrow(
       /Invalid tool target for ModelsProcessor/,
