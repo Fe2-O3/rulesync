@@ -1374,6 +1374,16 @@ export const SHARED_CONFIG_OWNERSHIP: Readonly<Record<string, SharedConfigFileDe
   // the `mcp_servers` and `subagents` blocks rulesync owns.
   [POOL_PROJECT_SETTINGS_SHARED_FILE_KEY]: POOL_SETTINGS_DECLARATION,
   [POOL_GLOBAL_SETTINGS_SHARED_FILE_KEY]: POOL_SETTINGS_DECLARATION,
+  // Continue setup (`.continue/config.yaml` project / `~/.continue/config.yaml`
+  // global): the same relative path at both scopes, so one declaration covers
+  // both files. Only the `models` list is owned; everything else hand-written
+  // (name, context, docs, other blocks) rides along untouched.
+  ".continue/config.yaml": {
+    format: "yaml",
+    features: {
+      models: { kind: "replace-owned-keys", ownedKeys: ["models"] },
+    },
+  },
   [TAKT_CONFIG_SHARED_FILE_KEY]: {
     format: "yaml",
     // config.yaml is the user's primary Takt config; refusing to parse a

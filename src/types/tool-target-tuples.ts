@@ -136,6 +136,7 @@ export const modelsProcessorToolTargetTuple = [
   "hermesagent",
   "crush",
   "zed",
+  "continue",
 ] as const;
 
 export const commandsProcessorToolTargetTuple = [

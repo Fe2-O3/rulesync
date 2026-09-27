@@ -127,12 +127,43 @@ describe("e2e: models", () => {
 
     await runGenerate({ target: "zed", features: "models" });
 
-    const written = JSON.parse(
-      await readFileContent(join(testDir, ".zed", "settings.json")),
+    const written = JSON.parse(await readFileContent(join(testDir, ".zed", "settings.json")));
+    expect(written.language_models.openai_compatible.local.available_models[0]).toMatchObject({
+      name: "ollama/qwen3-coder:30b",
+      max_tokens: 131072,
+    });
+  });
+
+  it("generates Continue entries from models.jsonc", async () => {
+    const testDir = getTestDir();
+    await writeFileContent(
+      join(testDir, ".rulesync", "models.jsonc"),
+      JSON.stringify({
+        providers: {
+          local: {
+            api: "http://127.0.0.1:5678/v1",
+            models: {
+              "ollama/qwen3-coder:30b": {
+                id: "ollama/qwen3-coder:30b",
+                limit: { context: 131072 },
+                tool_call: true,
+              },
+            },
+          },
+        },
+      }),
     );
-    expect(
-      written.language_models.openai_compatible.local.available_models[0],
-    ).toMatchObject({ name: "ollama/qwen3-coder:30b", max_tokens: 131072 });
+
+    await runGenerate({ target: "continue", features: "models" });
+
+    const written = load(
+      await readFileContent(join(testDir, ".continue", "config.yaml")),
+    ) as Record<string, unknown>;
+    const entries = written.models as Record<string, unknown>[];
+    expect(entries[0]).toMatchObject({
+      name: "local/ollama/qwen3-coder:30b",
+      capabilities: ["tool_use"],
+    });
   });
 
   it("covers every models target in the generate matrix", () => {
@@ -140,7 +171,7 @@ describe("e2e: models", () => {
     // rather than this project-scope matrix.
     assertGenerateMatrixCoversTargets({
       processor: ModelsProcessor,
-      testedTargets: ["opencode", "crush", "zed"],
+      testedTargets: ["opencode", "crush", "zed", "continue"],
     });
   });
 });

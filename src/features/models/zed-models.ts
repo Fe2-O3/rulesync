@@ -22,8 +22,8 @@ import type { SharedWritePath } from "../../lib/shared-file-derive.js";
 import { ValidationResult } from "../../types/ai-file.js";
 import { readFileContentOrNull } from "../../utils/file.js";
 import { parseJsonc as parseJsoncStrict } from "../../utils/jsonc.js";
-import { isPrototypePollutionKey } from "../../utils/prototype-pollution.js";
 import type { Logger } from "../../utils/logger.js";
+import { isPrototypePollutionKey } from "../../utils/prototype-pollution.js";
 import { applySharedConfigPatch, sharedConfigFileKey } from "../shared/shared-config-gateway.js";
 import {
   forTargetModelConfig,
@@ -154,8 +154,9 @@ export class ZedModels extends ToolModels {
   }: ToolModelsFromFileParams): Promise<ZedModels> {
     const paths = this.getSettablePaths({ global });
     const fileContent =
-      (await readFileContentOrNull(join(outputRoot, paths.relativeDirPath, paths.relativeFilePath))) ??
-      "{}";
+      (await readFileContentOrNull(
+        join(outputRoot, paths.relativeDirPath, paths.relativeFilePath),
+      )) ?? "{}";
     return new ZedModels({
       outputRoot,
       relativeDirPath: paths.relativeDirPath,
@@ -175,8 +176,9 @@ export class ZedModels extends ToolModels {
   }: ToolModelsFromRulesyncModelsParams): Promise<ZedModels> {
     const paths = this.getSettablePaths({ global });
     const fileContent =
-      (await readFileContentOrNull(join(outputRoot, paths.relativeDirPath, paths.relativeFilePath))) ??
-      "";
+      (await readFileContentOrNull(
+        join(outputRoot, paths.relativeDirPath, paths.relativeFilePath),
+      )) ?? "";
     const { providers } = forTargetModelConfig({
       config: rulesyncModels.getJson(),
       toolTarget: "zed",

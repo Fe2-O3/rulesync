@@ -5,9 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockLogger } from "../../test-utils/mock-logger.js";
 import { setupTestDirectory } from "../../test-utils/test-directories.js";
 import { ensureDir, readFileContent, writeFileContent } from "../../utils/file.js";
+import { ContinueModels } from "./continue-models.js";
 import { CrushModels } from "./crush-models.js";
 import { HermesModels } from "./hermesagent-models.js";
-import { ZedModels } from "./zed-models.js";
 import { ModelsProcessor } from "./models-processor.js";
 import {
   OpencodeModels,
@@ -20,6 +20,7 @@ import {
   RulesyncModels,
   RulesyncModelsFileSchema,
 } from "./rulesync-models.js";
+import { ZedModels } from "./zed-models.js";
 
 const SOURCE = {
   providers: {
@@ -213,12 +214,31 @@ describe("models", () => {
     });
   });
 
+  it("writes Continue entries with additive capabilities only", async () => {
+    const toolModels = await ContinueModels.fromRulesyncModels({
+      outputRoot: testDir,
+      rulesyncModels: rulesyncModels(testDir),
+      logger: createMockLogger(),
+    });
+    const written = toolModels.getConfig();
+    const entries = written.models as Record<string, unknown>[];
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({
+      name: "local/ollama/qwen3-coder:30b",
+      provider: "openai",
+      model: "ollama/qwen3-coder:30b",
+      apiBase: "http://127.0.0.1:5678/v1",
+      contextLength: 131072,
+    });
+  });
+
   it("supports opencode and rejects other targets", () => {
     expect(ModelsProcessor.getToolTargets({ global: true })).toEqual([
       "opencode",
       "hermesagent",
       "crush",
       "zed",
+      "continue",
     ]);
     expect(() => new ModelsProcessor({ toolTarget: "cursor", logger: createMockLogger() })).toThrow(
       /Invalid tool target for ModelsProcessor/,

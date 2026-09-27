@@ -8,9 +8,9 @@ import { modelsProcessorToolTargetTuple } from "../../types/tool-target-tuples.j
 import { ToolTarget } from "../../types/tool-targets.js";
 import { formatError } from "../../utils/error.js";
 import type { Logger } from "../../utils/logger.js";
+import { ContinueModels } from "./continue-models.js";
 import { CrushModels } from "./crush-models.js";
 import { HermesModels } from "./hermesagent-models.js";
-import { ZedModels } from "./zed-models.js";
 import { OpencodeModels } from "./opencode-models.js";
 import { RulesyncModels } from "./rulesync-models.js";
 import {
@@ -20,6 +20,7 @@ import {
   ToolModelsFromRulesyncModelsParams,
   ToolModelsSettablePaths,
 } from "./tool-models.js";
+import { ZedModels } from "./zed-models.js";
 
 export type ModelsProcessorToolTarget = (typeof modelsProcessorToolTargetTuple)[number];
 
@@ -61,6 +62,13 @@ export const toolModelsFactories = new Map<ModelsProcessorToolTarget, ToolModels
     "zed",
     {
       class: ZedModels,
+      meta: { supportsProject: true, supportsGlobal: true },
+    },
+  ],
+  [
+    "continue",
+    {
+      class: ContinueModels,
       meta: { supportsProject: true, supportsGlobal: true },
     },
   ],
