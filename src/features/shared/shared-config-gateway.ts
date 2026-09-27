@@ -1318,6 +1318,8 @@ const CRUSH_CONFIG_DECLARATION: SharedConfigFileDeclaration = {
   invalidRootPolicy: "error",
   features: {
     mcp: { kind: "replace-owned-keys", ownedKeys: ["mcp"] },
+    // The legacy `models.large` slot carries the default; `small` is untouched.
+    models: { kind: "replace-owned-keys", ownedKeys: ["providers", "models"] },
     hooks: { kind: "replace-owned-keys", ownedKeys: ["hooks"] },
     permissions: { kind: "deep-merge" },
   },

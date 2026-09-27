@@ -78,12 +78,40 @@ describe("e2e: models", () => {
     expect(imported.default).toEqual({ provider: "local", model: "ollama/qwen3-coder:30b" });
   });
 
+  it("generates Crush providers from models.jsonc", async () => {
+    const testDir = getTestDir();
+    await writeFileContent(
+      join(testDir, ".rulesync", "models.jsonc"),
+      JSON.stringify({
+        providers: {
+          local: {
+            api: "http://127.0.0.1:5678/v1",
+            env: ["LOCAL_MODELS_KEY"],
+            models: {
+              "ollama/qwen3-coder:30b": {
+                id: "ollama/qwen3-coder:30b",
+                limit: { context: 131072 },
+              },
+            },
+          },
+        },
+        default: { provider: "local", model: "ollama/qwen3-coder:30b" },
+      }),
+    );
+
+    await runGenerate({ target: "crush", features: "models" });
+
+    const written = JSON.parse(await readFileContent(join(testDir, "crush.json")));
+    expect(written.providers.local.api_key).toBe("$LOCAL_MODELS_KEY");
+    expect(written.models.large).toEqual({ provider: "local", model: "ollama/qwen3-coder:30b" });
+  });
+
   it("covers every models target in the generate matrix", () => {
     // hermesagent is global-only, so it is covered by the global test below
     // rather than this project-scope matrix.
     assertGenerateMatrixCoversTargets({
       processor: ModelsProcessor,
-      testedTargets: ["opencode"],
+      testedTargets: ["opencode", "crush"],
     });
   });
 });

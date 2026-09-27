@@ -36,6 +36,12 @@ const ModelsDevModalitiesSchema = z.looseObject({
   output: z.optional(z.array(z.string())),
 });
 
+// models.dev per-1M-token prices; Crush requires them, so they ride along.
+const ModelsDevCostSchema = z.looseObject({
+  input: z.optional(z.number()),
+  output: z.optional(z.number()),
+});
+
 const RulesyncModelSchema = z.looseObject({
   id: z.string(),
   name: z.optional(z.string()),
@@ -45,6 +51,7 @@ const RulesyncModelSchema = z.looseObject({
   reasoning: z.optional(z.boolean()),
   attachment: z.optional(z.boolean()),
   modalities: z.optional(ModelsDevModalitiesSchema),
+  cost: z.optional(ModelsDevCostSchema),
   temperature: z.optional(z.boolean()),
   open_weights: z.optional(z.boolean()),
   knowledge: z.optional(z.string()),
@@ -74,6 +81,12 @@ export const RulesyncModelsFileSchema = z.looseObject({
   // `{ "opencode": { default: {...}, providers: {...} } }`.
   // A named provider replaces the shared one wholesale for that tool.
   opencode: z.optional(
+    z.looseObject({
+      default: z.optional(ModelsDefaultSchema),
+      providers: z.optional(z.record(z.string(), RulesyncModelProviderSchema)),
+    }),
+  ),
+  crush: z.optional(
     z.looseObject({
       default: z.optional(ModelsDefaultSchema),
       providers: z.optional(z.record(z.string(), RulesyncModelProviderSchema)),
@@ -217,7 +230,7 @@ export function forTargetModelConfig({
   toolTarget,
 }: {
   config: RulesyncModelsFile;
-  toolTarget: "opencode" | "hermesagent";
+  toolTarget: "opencode" | "hermesagent" | "crush";
 }): { providers: Record<string, RulesyncModelProvider>; default?: ModelsDefault } {
   const override = config[toolTarget];
   const providers: Record<string, RulesyncModelProvider> = {

@@ -151,6 +151,7 @@ describe("shared-file write derivation", () => {
         ".config/crush/crush.json": [
           "hooks",
           "mcp",
+          "models",
           "permissions",
         ],
         ".config/devin/config.json": [
@@ -271,6 +272,7 @@ describe("shared-file write derivation", () => {
         "crush.json": [
           "hooks",
           "mcp",
+          "models",
           "permissions",
         ],
         "kilo.json": [

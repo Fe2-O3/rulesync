@@ -8,6 +8,7 @@ import { modelsProcessorToolTargetTuple } from "../../types/tool-target-tuples.j
 import { ToolTarget } from "../../types/tool-targets.js";
 import { formatError } from "../../utils/error.js";
 import type { Logger } from "../../utils/logger.js";
+import { CrushModels } from "./crush-models.js";
 import { HermesModels } from "./hermesagent-models.js";
 import { OpencodeModels } from "./opencode-models.js";
 import { RulesyncModels } from "./rulesync-models.js";
@@ -46,6 +47,13 @@ export const toolModelsFactories = new Map<ModelsProcessorToolTarget, ToolModels
       // Global-only, like Hermes MCP: no project-scoped models location exists.
       class: HermesModels,
       meta: { supportsProject: false, supportsGlobal: true },
+    },
+  ],
+  [
+    "crush",
+    {
+      class: CrushModels,
+      meta: { supportsProject: true, supportsGlobal: true },
     },
   ],
 ]);

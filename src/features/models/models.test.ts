@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockLogger } from "../../test-utils/mock-logger.js";
 import { setupTestDirectory } from "../../test-utils/test-directories.js";
 import { ensureDir, readFileContent, writeFileContent } from "../../utils/file.js";
+import { CrushModels } from "./crush-models.js";
 import { HermesModels } from "./hermesagent-models.js";
 import { ModelsProcessor } from "./models-processor.js";
 import {
@@ -196,7 +197,11 @@ describe("models", () => {
   });
 
   it("supports opencode and rejects other targets", () => {
-    expect(ModelsProcessor.getToolTargets({ global: true })).toEqual(["opencode", "hermesagent"]);
+    expect(ModelsProcessor.getToolTargets({ global: true })).toEqual([
+      "opencode",
+      "hermesagent",
+      "crush",
+    ]);
     expect(() => new ModelsProcessor({ toolTarget: "cursor", logger: createMockLogger() })).toThrow(
       /Invalid tool target for ModelsProcessor/,
     );
@@ -229,6 +234,26 @@ describe("models", () => {
     await expect(HermesModels.fromFile({ outputRoot: testDir, global: false })).rejects.toThrow(
       /global-only/,
     );
+  });
+
+  it("writes Crush providers with $VAR keys and the large slot", async () => {
+    const toolModels = await CrushModels.fromRulesyncModels({
+      outputRoot: testDir,
+      rulesyncModels: rulesyncModels(testDir),
+      logger: createMockLogger(),
+    });
+    const written = JSON.parse(toolModels.getFileContent());
+    expect(written.providers.local).toMatchObject({
+      base_url: "http://127.0.0.1:5678/v1",
+      type: "openai-compat",
+      api_key: "$LOCAL_MODELS_KEY",
+    });
+    expect(written.providers.local.models[0]).toMatchObject({
+      id: "ollama/qwen3-coder:30b",
+      context_window: 131072,
+      cost_per_1m_in: 0,
+    });
+    expect(written.models.large).toEqual({ provider: "local", model: "ollama/qwen3-coder:30b" });
   });
 
   it("generates opencode.json from the source file", async () => {
