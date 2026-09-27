@@ -166,12 +166,42 @@ describe("e2e: models", () => {
     });
   });
 
+  it("generates Qwen provider entries from models.jsonc", async () => {
+    const testDir = getTestDir();
+    await writeFileContent(
+      join(testDir, ".rulesync", "models.jsonc"),
+      JSON.stringify({
+        providers: {
+          local: {
+            api: "http://127.0.0.1:5678/v1",
+            env: ["LOCAL_MODELS_KEY"],
+            models: {
+              "ollama/qwen3-coder:30b": {
+                id: "ollama/qwen3-coder:30b",
+                limit: { context: 131072 },
+              },
+            },
+          },
+        },
+      }),
+    );
+
+    await runGenerate({ target: "qwencode", features: "models" });
+
+    const written = JSON.parse(await readFileContent(join(testDir, ".qwen", "settings.json")));
+    expect(written.modelProviders.local[0]).toMatchObject({
+      id: "ollama/qwen3-coder:30b",
+      envKey: "LOCAL_MODELS_KEY",
+    });
+    expect(written.providerProtocol).toEqual({ local: "openai" });
+  });
+
   it("covers every models target in the generate matrix", () => {
     // hermesagent and goose are global-only, so they are covered by the
     // global tests below rather than this project-scope matrix.
     assertGenerateMatrixCoversTargets({
       processor: ModelsProcessor,
-      testedTargets: ["opencode", "crush", "zed", "continue"],
+      testedTargets: ["opencode", "crush", "zed", "continue", "qwencode"],
     });
   });
 });

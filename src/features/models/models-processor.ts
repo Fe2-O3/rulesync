@@ -17,6 +17,7 @@ import { CrushModels } from "./crush-models.js";
 import { GooseModels } from "./goose-models.js";
 import { HermesModels } from "./hermesagent-models.js";
 import { OpencodeModels } from "./opencode-models.js";
+import { QwenModels } from "./qwen-models.js";
 import {
   type ModelsDefault,
   type RulesyncModelProvider,
@@ -104,6 +105,13 @@ export const toolModelsFactories = new Map<ModelsProcessorToolTarget, ToolModels
       // Global-only: custom providers live under the user config directory.
       class: GooseModels,
       meta: { supportsProject: false, supportsGlobal: true },
+    },
+  ],
+  [
+    "qwencode",
+    {
+      class: QwenModels,
+      meta: { supportsProject: true, supportsGlobal: true },
     },
   ],
 ]);

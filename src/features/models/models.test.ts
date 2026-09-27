@@ -16,6 +16,7 @@ import {
   toOpencodeDefault,
   toOpencodeProviders,
 } from "./opencode-models.js";
+import { QwenModels } from "./qwen-models.js";
 import {
   forTargetModelConfig,
   RulesyncModels,
@@ -259,6 +260,24 @@ describe("models", () => {
     });
   });
 
+  it("writes Qwen provider entries with protocol mapping", async () => {
+    const toolModels = await QwenModels.fromRulesyncModels({
+      outputRoot: testDir,
+      rulesyncModels: rulesyncModels(testDir),
+      logger: createMockLogger(),
+    });
+    const written = JSON.parse(toolModels.getFileContent());
+    expect(written.modelProviders.local[0]).toMatchObject({
+      id: "ollama/qwen3-coder:30b",
+      envKey: "LOCAL_MODELS_KEY",
+      baseUrl: "http://127.0.0.1:5678/v1",
+    });
+    expect(written.modelProviders.local[0].generationConfig).toMatchObject({
+      contextWindowSize: 131072,
+    });
+    expect(written.providerProtocol).toEqual({ local: "openai" });
+  });
+
   it("supports opencode and rejects other targets", () => {
     expect(ModelsProcessor.getToolTargets({ global: true })).toEqual([
       "opencode",
@@ -267,6 +286,7 @@ describe("models", () => {
       "zed",
       "continue",
       "goose",
+      "qwencode",
     ]);
     expect(() => new ModelsProcessor({ toolTarget: "cursor", logger: createMockLogger() })).toThrow(
       /Invalid tool target for ModelsProcessor/,

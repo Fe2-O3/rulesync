@@ -211,6 +211,7 @@ describe("shared-file write derivation", () => {
         ".qwen/settings.json": [
           "hooks",
           "mcp",
+          "models",
           "permissions",
         ],
         ".reasonix/config.toml": [

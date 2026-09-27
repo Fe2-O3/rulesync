@@ -1559,6 +1559,9 @@ export const SHARED_CONFIG_OWNERSHIP: Readonly<Record<string, SharedConfigFileDe
     format: "json",
     features: {
       mcp: { kind: "replace-owned-keys", ownedKeys: ["mcpServers"] },
+      // Custom ids need a `providerProtocol` mapping or Qwen skips them, so
+      // both keys are owned here.
+      models: { kind: "replace-owned-keys", ownedKeys: ["modelProviders", "providerProtocol"] },
       hooks: { kind: "replace-owned-keys", ownedKeys: ["hooks", "disableAllHooks"] },
       permissions: {
         kind: "replace-owned-keys",

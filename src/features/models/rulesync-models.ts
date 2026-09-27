@@ -90,6 +90,7 @@ export const RulesyncModelsFileSchema = z.looseObject({
   zed: z.optional(toolScopedModelsSchema),
   continue: z.optional(toolScopedModelsSchema),
   goose: z.optional(toolScopedModelsSchema),
+  qwencode: z.optional(toolScopedModelsSchema),
   hermesagent: z.optional(toolScopedModelsSchema),
 });
 
@@ -223,7 +224,7 @@ export function forTargetModelConfig({
   toolTarget,
 }: {
   config: RulesyncModelsFile;
-  toolTarget: "opencode" | "hermesagent" | "crush" | "zed" | "continue" | "goose";
+  toolTarget: "opencode" | "hermesagent" | "crush" | "zed" | "continue" | "goose" | "qwencode";
 }): { providers: Record<string, RulesyncModelProvider>; default?: ModelsDefault } {
   const override = config[toolTarget];
   const providers: Record<string, RulesyncModelProvider> = {
