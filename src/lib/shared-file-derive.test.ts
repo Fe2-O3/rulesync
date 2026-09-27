@@ -161,6 +161,7 @@ describe("shared-file write derivation", () => {
         ".config/goose/config.yaml": [
           "commands",
           "mcp",
+          "models",
         ],
         ".config/opencode/opencode.json": [
           "mcp",

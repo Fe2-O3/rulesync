@@ -7,6 +7,7 @@ import { setupTestDirectory } from "../../test-utils/test-directories.js";
 import { ensureDir, readFileContent, writeFileContent } from "../../utils/file.js";
 import { ContinueModels } from "./continue-models.js";
 import { CrushModels } from "./crush-models.js";
+import { GooseModels } from "./goose-models.js";
 import { HermesModels } from "./hermesagent-models.js";
 import { ModelsProcessor } from "./models-processor.js";
 import {
@@ -232,6 +233,32 @@ describe("models", () => {
     });
   });
 
+  it("writes Goose provider files plus the config default", async () => {
+    const configModels = await GooseModels.fromRulesyncModels({
+      outputRoot: testDir,
+      rulesyncModels: rulesyncModels(testDir),
+      global: true,
+      logger: createMockLogger(),
+    });
+    expect(configModels.getConfig()).toMatchObject({
+      active_provider: "local",
+      providers: { local: { enabled: true, model: "ollama/qwen3-coder:30b" } },
+    });
+    const auxiliaries = await GooseModels.getAuxiliaryFiles({
+      rulesyncModels: rulesyncModels(testDir),
+      outputRoot: testDir,
+      global: true,
+      logger: createMockLogger(),
+    });
+    expect(auxiliaries).toHaveLength(1);
+    expect(JSON.parse(auxiliaries[0]?.getFileContent() ?? "{}")).toMatchObject({
+      name: "local",
+      engine: "openai",
+      api_key_env: "LOCAL_MODELS_KEY",
+      base_url: "http://127.0.0.1:5678/v1",
+    });
+  });
+
   it("supports opencode and rejects other targets", () => {
     expect(ModelsProcessor.getToolTargets({ global: true })).toEqual([
       "opencode",
@@ -239,6 +266,7 @@ describe("models", () => {
       "crush",
       "zed",
       "continue",
+      "goose",
     ]);
     expect(() => new ModelsProcessor({ toolTarget: "cursor", logger: createMockLogger() })).toThrow(
       /Invalid tool target for ModelsProcessor/,

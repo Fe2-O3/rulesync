@@ -1825,6 +1825,9 @@ export const SHARED_CONFIG_OWNERSHIP: Readonly<Record<string, SharedConfigFileDe
     invalidRootPolicy: "error",
     features: {
       mcp: { kind: "replace-owned-keys", ownedKeys: ["extensions"] },
+      // The `providers` map is merged by name (other providers carried over);
+      // only `active_provider` is replaced wholesale.
+      models: { kind: "replace-owned-keys", ownedKeys: ["active_provider", "providers"] },
       // `slash_commands` registers generated recipes as `/name` commands. It is
       // co-owned the same way: the list is recomputed from the existing file
       // (entries pointing outside the rulesync-managed recipes directory carried

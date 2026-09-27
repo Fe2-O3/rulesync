@@ -1,6 +1,10 @@
 import { z } from "zod/mini";
 
-import { RULESYNC_MODELS_RELATIVE_FILE_PATH } from "../../constants/rulesync-paths.js";
+import {
+  RULESYNC_MODELS_FILE_NAME,
+  RULESYNC_MODELS_RELATIVE_FILE_PATH,
+  RULESYNC_RELATIVE_DIR_PATH,
+} from "../../constants/rulesync-paths.js";
 import { FeatureProcessor } from "../../types/feature-processor.js";
 import { RulesyncFile } from "../../types/rulesync-file.js";
 import { ToolFile } from "../../types/tool-file.js";
@@ -10,9 +14,14 @@ import { formatError } from "../../utils/error.js";
 import type { Logger } from "../../utils/logger.js";
 import { ContinueModels } from "./continue-models.js";
 import { CrushModels } from "./crush-models.js";
+import { GooseModels } from "./goose-models.js";
 import { HermesModels } from "./hermesagent-models.js";
 import { OpencodeModels } from "./opencode-models.js";
-import { RulesyncModels } from "./rulesync-models.js";
+import {
+  type ModelsDefault,
+  type RulesyncModelProvider,
+  RulesyncModels,
+} from "./rulesync-models.js";
 import {
   ToolModels,
   ToolModelsForDeletionParams,
@@ -34,6 +43,23 @@ type ToolModelsFactory = {
     fromFile(params: ToolModelsFromFileParams): Promise<ToolModels>;
     forDeletion(params: ToolModelsForDeletionParams): ToolModels;
     getSettablePaths(options?: { global?: boolean }): ToolModelsSettablePaths;
+    /**
+     * Extra files for tools whose config spans several files (Goose's
+     * per-provider JSON). Mirrors the hooks processor's hook of the same
+     * name. Generate direction only.
+     */
+    getAuxiliaryFiles?(params: {
+      outputRoot?: string;
+      global?: boolean;
+      rulesyncModels: RulesyncModels;
+      logger?: Logger;
+    }): ToolFile[] | Promise<ToolFile[]>;
+    /** Multi-file import (Goose's provider directory). */
+    loadAllFiles?(params: {
+      outputRoot?: string;
+      global?: boolean;
+      logger?: Logger;
+    }): ToolFile[] | Promise<ToolFile[]>;
   };
   meta: {
     supportsProject: boolean;
@@ -70,6 +96,14 @@ export const toolModelsFactories = new Map<ModelsProcessorToolTarget, ToolModels
     {
       class: ContinueModels,
       meta: { supportsProject: true, supportsGlobal: true },
+    },
+  ],
+  [
+    "goose",
+    {
+      // Global-only: custom providers live under the user config directory.
+      class: GooseModels,
+      meta: { supportsProject: false, supportsGlobal: true },
     },
   ],
 ]);
@@ -146,6 +180,14 @@ export class ModelsProcessor extends FeatureProcessor {
   }: {
     forDeletion?: boolean;
   } = {}): Promise<ToolFile[]> {
+    if (!forDeletion && this.factory.class.loadAllFiles) {
+      return await this.factory.class.loadAllFiles({
+        outputRoot: this.outputRoot,
+        global: this.global,
+        logger: this.logger,
+      });
+    }
+
     const paths = this.factory.class.getSettablePaths({ global: this.global });
 
     if (forDeletion) {
@@ -177,7 +219,7 @@ export class ModelsProcessor extends FeatureProcessor {
       throw new Error(`No ${RULESYNC_MODELS_RELATIVE_FILE_PATH} found.`);
     }
 
-    return [
+    const toolModelsList = [
       await this.factory.class.fromRulesyncModels({
         outputRoot: this.outputRoot,
         rulesyncModels,
@@ -185,6 +227,15 @@ export class ModelsProcessor extends FeatureProcessor {
         logger: this.logger,
       }),
     ];
+
+    const auxiliaryFiles = await this.factory.class.getAuxiliaryFiles?.({
+      outputRoot: this.outputRoot,
+      global: this.global,
+      rulesyncModels,
+      logger: this.logger,
+    });
+
+    return [...toolModelsList, ...(auxiliaryFiles ?? [])];
   }
 
   async convertToolFilesToRulesyncFiles(toolFiles: ToolFile[]): Promise<RulesyncFile[]> {
@@ -192,11 +243,34 @@ export class ModelsProcessor extends FeatureProcessor {
       (file): file is ToolModels => file instanceof ToolModels,
     );
 
-    const rulesyncModelsList = toolModelsList.map((toolModels) => {
-      return toolModels.toRulesyncModels();
-    });
-
-    return rulesyncModelsList;
+    // Multi-file tools (Goose) yield one source fragment per file; merge them
+    // by provider id, keeping the first declared default.
+    const mergedProviders: Record<string, RulesyncModelProvider> = {};
+    let mergedDefault: ModelsDefault | undefined;
+    for (const toolModels of toolModelsList) {
+      const json = toolModels.toRulesyncModels().getJson();
+      Object.assign(mergedProviders, json.providers);
+      mergedDefault ??= json.default;
+    }
+    if (toolModelsList.length <= 1) {
+      return toolModelsList.map((toolModels) => toolModels.toRulesyncModels());
+    }
+    return [
+      new RulesyncModels({
+        outputRoot: this.outputRoot,
+        relativeDirPath: RULESYNC_RELATIVE_DIR_PATH,
+        relativeFilePath: RULESYNC_MODELS_FILE_NAME,
+        fileContent: JSON.stringify(
+          {
+            providers: mergedProviders,
+            ...(mergedDefault !== undefined && { default: mergedDefault }),
+          },
+          null,
+          2,
+        ),
+        validate: false,
+      }),
+    ];
   }
 
   static getToolTargets({ global = false }: { global?: boolean } = {}): ToolTarget[] {

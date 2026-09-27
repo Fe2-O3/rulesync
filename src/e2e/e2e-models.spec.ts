@@ -167,8 +167,8 @@ describe("e2e: models", () => {
   });
 
   it("covers every models target in the generate matrix", () => {
-    // hermesagent is global-only, so it is covered by the global test below
-    // rather than this project-scope matrix.
+    // hermesagent and goose are global-only, so they are covered by the
+    // global tests below rather than this project-scope matrix.
     assertGenerateMatrixCoversTargets({
       processor: ModelsProcessor,
       testedTargets: ["opencode", "crush", "zed", "continue"],
@@ -212,5 +212,41 @@ describe("e2e: models global", () => {
     const providers = written.custom_providers as Record<string, unknown>[];
     expect(providers).toHaveLength(1);
     expect(providers[0]).toMatchObject({ base_url: "http://127.0.0.1:5678/v1" });
+  });
+
+  it("generates Goose provider files into the home directory", async () => {
+    const projectDir = getProjectDir();
+    const homeDir = getHomeDir();
+    await writeFileContent(
+      join(projectDir, ".rulesync", "models.jsonc"),
+      JSON.stringify({
+        providers: {
+          local: {
+            api: "http://127.0.0.1:5678/v1",
+            env: ["LOCAL_MODELS_KEY"],
+            models: {
+              "ollama/qwen3-coder:30b": { id: "ollama/qwen3-coder:30b", limit: { context: 1 } },
+            },
+          },
+        },
+        default: { provider: "local", model: "ollama/qwen3-coder:30b" },
+      }),
+    );
+
+    await runGenerate({
+      target: "goose",
+      features: "models",
+      global: true,
+      env: { HOME_DIR: homeDir },
+    });
+
+    const provider = JSON.parse(
+      await readFileContent(join(homeDir, ".config", "goose", "custom_providers", "local.json")),
+    );
+    expect(provider).toMatchObject({ name: "local", api_key_env: "LOCAL_MODELS_KEY" });
+    const config = load(
+      await readFileContent(join(homeDir, ".config", "goose", "config.yaml")),
+    ) as Record<string, unknown>;
+    expect(config.active_provider).toBe("local");
   });
 });
