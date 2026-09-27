@@ -143,6 +143,57 @@ describe("models", () => {
     ).toBe(false);
   });
 
+  it("round-trips opencode.json back into the canonical source", async () => {
+    await writeFileContent(
+      join(testDir, "opencode.json"),
+      JSON.stringify({
+        provider: {
+          local: {
+            npm: "@ai-sdk/openai-compatible",
+            options: { baseURL: "http://127.0.0.1:5678/v1", apiKey: "{env:LOCAL_MODELS_KEY}" },
+            models: {
+              "ollama/qwen3-coder:30b": {
+                limit: { context: 131072, output: 16384 },
+                tool_call: true,
+              },
+            },
+          },
+          __proto__: { models: {} },
+        },
+        model: "local/ollama/qwen3-coder:30b",
+      }),
+    );
+    const toolModels = await OpencodeModels.fromFile({ outputRoot: testDir });
+    const json = toolModels.toRulesyncModels().getJson();
+    expect(json.providers.local?.api).toBe("http://127.0.0.1:5678/v1");
+    expect(json.providers.local?.env).toEqual(["LOCAL_MODELS_KEY"]);
+    expect(json.providers.local?.models?.["ollama/qwen3-coder:30b"]?.limit).toEqual({
+      context: 131072,
+      output: 16384,
+    });
+    expect(json.default).toEqual({ provider: "local", model: "ollama/qwen3-coder:30b" });
+    expect(Object.keys(json.providers)).toEqual(["local"]);
+  });
+
+  it("imports opencode.json back through the processor", async () => {
+    await writeFileContent(
+      join(testDir, "opencode.json"),
+      JSON.stringify({
+        provider: { local: { options: { baseURL: "http://x/v1" }, models: {} } },
+        model: "local/m",
+      }),
+    );
+    const processor = new ModelsProcessor({
+      outputRoot: testDir,
+      toolTarget: "opencode",
+      logger: createMockLogger(),
+    });
+    const rulesyncFiles = await processor.convertToolFilesToRulesyncFiles(
+      await processor.loadToolFiles(),
+    );
+    expect(rulesyncFiles).toHaveLength(1);
+  });
+
   it("supports opencode and rejects other targets", () => {
     expect(ModelsProcessor.getToolTargets({ global: true })).toEqual(["opencode"]);
     expect(() => new ModelsProcessor({ toolTarget: "cursor", logger: createMockLogger() })).toThrow(

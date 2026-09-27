@@ -65,8 +65,6 @@ export class ModelsProcessor extends FeatureProcessor {
     }
   }
 
-  // Tool-file reads land in part 2 with import; generate only needs the
-  // deletion branch below for the orphan sweep.
   async loadToolFiles({
     forDeletion = false,
   }: {
@@ -84,7 +82,14 @@ export class ModelsProcessor extends FeatureProcessor {
       return toolModels.isDeletable() ? [toolModels] : [];
     }
 
-    throw new Error("models tool-file reads are not supported yet (tracked in #3195).");
+    return [
+      await OpencodeModels.fromFile({
+        outputRoot: this.outputRoot,
+        validate: true,
+        global: this.global,
+        logger: this.logger,
+      }),
+    ];
   }
 
   async convertRulesyncFilesToToolFiles(rulesyncFiles: RulesyncFile[]): Promise<ToolFile[]> {

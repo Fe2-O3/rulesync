@@ -13,6 +13,7 @@ import {
 import { ValidationResult } from "../../types/ai-file.js";
 import { readFileContentOrNull } from "../../utils/file.js";
 import { parseJsonc as parseJsoncStrict } from "../../utils/jsonc.js";
+import { isPrototypePollutionKey } from "../../utils/prototype-pollution.js";
 import { applySharedConfigPatch, sharedConfigFileKey } from "../shared/shared-config-gateway.js";
 import {
   forTargetModelConfig,
@@ -24,6 +25,7 @@ import { RulesyncModels } from "./rulesync-models.js";
 import {
   ToolModels,
   ToolModelsForDeletionParams,
+  ToolModelsFromFileParams,
   ToolModelsFromRulesyncModelsParams,
   ToolModelsParams,
   ToolModelsSettablePaths,
@@ -142,6 +144,67 @@ export function toOpencodeDefault(defaultValue: ModelsDefault | undefined): stri
   return `${defaultValue.provider}/${defaultValue.model}`;
 }
 
+// Matches `{env:VAR}`; the lookbehind avoids Cursor's `${env:VAR}` spelling.
+const OPENCODE_ENV_VAR_PATTERN = /(?<!\$)\{env:([^}:]+)\}/g;
+
+type OpencodeModelShape = z.infer<typeof OpencodeModelEntrySchema>;
+
+function fromOpencodeModel(modelId: string, model: OpencodeModelShape): RulesyncModel {
+  return {
+    id: modelId,
+    ...(model.name !== undefined && { name: model.name }),
+    ...((model.limit?.context !== undefined || model.limit?.output !== undefined) && {
+      limit: {
+        ...(model.limit?.context !== undefined && { context: model.limit.context }),
+        ...(model.limit?.output !== undefined && { output: model.limit.output }),
+      },
+    }),
+    ...(model.tool_call !== undefined && { tool_call: model.tool_call }),
+    ...(model.reasoning !== undefined && { reasoning: model.reasoning }),
+    ...(model.modalities !== undefined && { modalities: model.modalities }),
+  };
+}
+
+function fromOpencodeApiKey(apiKey: string | undefined): string[] | undefined {
+  if (!apiKey) return undefined;
+  OPENCODE_ENV_VAR_PATTERN.lastIndex = 0;
+  const match = OPENCODE_ENV_VAR_PATTERN.exec(apiKey);
+  return match?.[1] ? [match[1]] : undefined;
+}
+
+/** Split on the first `/` only, so model ids containing `/` stay unambiguous. */
+function fromOpencodeDefault(model: string | undefined): ModelsDefault | undefined {
+  if (!model) return undefined;
+  const slash = model.indexOf("/");
+  if (slash <= 0) return undefined;
+  return { provider: model.slice(0, slash), model: model.slice(slash + 1) };
+}
+
+function fromOpencodeProviders(
+  providers: Record<string, z.infer<typeof OpencodeProviderEntrySchema>>,
+): Record<string, RulesyncModelProvider> {
+  const out: Record<string, RulesyncModelProvider> = {};
+  for (const [id, provider] of Object.entries(providers)) {
+    // Tool files are untrusted input: `out[id] = ...` on `__proto__` would
+    // set the prototype instead of an entry.
+    if (isPrototypePollutionKey(id)) continue;
+    const models: Record<string, RulesyncModel> = {};
+    for (const [modelId, model] of Object.entries(provider.models ?? {})) {
+      if (isPrototypePollutionKey(modelId)) continue;
+      models[modelId] = fromOpencodeModel(modelId, model);
+    }
+    const env = fromOpencodeApiKey(provider.options?.apiKey);
+    out[id] = {
+      ...(provider.name !== undefined && { name: provider.name }),
+      ...(provider.options?.baseURL !== undefined && { api: provider.options.baseURL }),
+      ...(env !== undefined && { env }),
+      ...(provider.npm !== undefined && { npm: provider.npm }),
+      models,
+    };
+  }
+  return out;
+}
+
 export class OpencodeModels extends ToolModels {
   private readonly json: OpencodeConfig;
 
@@ -169,6 +232,32 @@ export class OpencodeModels extends ToolModels {
   }
 
   // fromFile lands in part 2 with import; generate only needs the writer below.
+  static async fromFile({
+    outputRoot = process.cwd(),
+    validate = true,
+    global = false,
+  }: ToolModelsFromFileParams): Promise<OpencodeModels> {
+    const basePaths = this.getSettablePaths({ global });
+    const jsonDir = join(outputRoot, basePaths.relativeDirPath);
+    const jsoncContent = await readFileContentOrNull(join(jsonDir, OPENCODE_JSONC_FILE_NAME));
+    const jsonContent =
+      jsoncContent === null
+        ? await readFileContentOrNull(join(jsonDir, OPENCODE_JSON_FILE_NAME))
+        : null;
+    const fileContent = jsoncContent ?? jsonContent ?? '{"provider":{}}';
+    const json = parseJsonc(fileContent);
+    return new OpencodeModels({
+      outputRoot,
+      relativeDirPath: basePaths.relativeDirPath,
+      relativeFilePath:
+        jsoncContent !== null || jsonContent === null
+          ? OPENCODE_JSONC_FILE_NAME
+          : OPENCODE_JSON_FILE_NAME,
+      fileContent: JSON.stringify({ ...json, provider: json.provider ?? {} }, null, 2),
+      validate,
+    });
+  }
+
   static async fromRulesyncModels({
     outputRoot = process.cwd(),
     rulesyncModels,
@@ -218,10 +307,18 @@ export class OpencodeModels extends ToolModels {
     });
   }
 
-  // Import lands in part 2 of this series; until then the generate-only
-  // processor reports it as unsupported (see ModelsProcessor).
   toRulesyncModels(): RulesyncModels {
-    throw new Error("models import is not supported yet (tracked in #3195).");
+    const defaultValue = fromOpencodeDefault(this.json.model);
+    return this.toRulesyncModelsDefault({
+      fileContent: JSON.stringify(
+        {
+          providers: fromOpencodeProviders(this.json.provider ?? {}),
+          ...(defaultValue !== undefined && { default: defaultValue }),
+        },
+        null,
+        2,
+      ),
+    });
   }
 
   validate(): ValidationResult {

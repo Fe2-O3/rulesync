@@ -1,3 +1,8 @@
+import {
+  RULESYNC_MODELS_FILE_NAME,
+  RULESYNC_MODELS_SCHEMA_URL,
+  RULESYNC_RELATIVE_DIR_PATH,
+} from "../../constants/rulesync-paths.js";
 import { AiFileFromFileParams, AiFileParams } from "../../types/ai-file.js";
 import { ToolFile } from "../../types/tool-file.js";
 import type { Logger } from "../../utils/logger.js";
@@ -52,6 +57,23 @@ export abstract class ToolModels extends ToolFile {
   }
 
   abstract toRulesyncModels(): RulesyncModels;
+
+  protected toRulesyncModelsDefault({
+    fileContent = undefined,
+    outputRoot = this.outputRoot,
+  }: {
+    fileContent?: string;
+    outputRoot?: string;
+  } = {}): RulesyncModels {
+    const content = fileContent ?? this.fileContent;
+    const { $schema: _, ...json } = JSON.parse(content);
+    return new RulesyncModels({
+      outputRoot,
+      relativeDirPath: RULESYNC_RELATIVE_DIR_PATH,
+      relativeFilePath: RULESYNC_MODELS_FILE_NAME,
+      fileContent: JSON.stringify({ $schema: RULESYNC_MODELS_SCHEMA_URL, ...json }, null, 2),
+    });
+  }
 
   static async fromFile(_params: ToolModelsFromFileParams): Promise<ToolModels> {
     throw new Error("Please implement this method in the subclass.");
