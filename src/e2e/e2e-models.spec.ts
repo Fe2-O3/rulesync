@@ -1,13 +1,16 @@
 import { join } from "node:path";
 
+import { load } from "js-yaml";
 import { describe, expect, it } from "vitest";
 
 import { ModelsProcessor } from "../features/models/models-processor.js";
 import { readFileContent, writeFileContent } from "../utils/file.js";
+import { getHermesagentGlobalDir } from "../utils/hermesagent.js";
 import {
   assertGenerateMatrixCoversTargets,
   runGenerate,
   runImport,
+  useGlobalTestDirectories,
   useTestDirectory,
 } from "./e2e-helper.js";
 
@@ -76,9 +79,50 @@ describe("e2e: models", () => {
   });
 
   it("covers every models target in the generate matrix", () => {
+    // hermesagent is global-only, so it is covered by the global test below
+    // rather than this project-scope matrix.
     assertGenerateMatrixCoversTargets({
       processor: ModelsProcessor,
       testedTargets: ["opencode"],
     });
+  });
+});
+
+describe("e2e: models global", () => {
+  const { getProjectDir, getHomeDir } = useGlobalTestDirectories();
+
+  it("generates Hermes model config into the home directory", async () => {
+    const projectDir = getProjectDir();
+    const homeDir = getHomeDir();
+    await writeFileContent(
+      join(projectDir, ".rulesync", "models.jsonc"),
+      JSON.stringify({
+        providers: {
+          local: {
+            api: "http://127.0.0.1:5678/v1",
+            env: ["LOCAL_MODELS_KEY"],
+            models: { "ollama/qwen3-coder:30b": { id: "ollama/qwen3-coder:30b" } },
+          },
+        },
+        default: { provider: "local", model: "ollama/qwen3-coder:30b" },
+      }),
+    );
+
+    await runGenerate({
+      target: "hermesagent",
+      features: "models",
+      global: true,
+      env: { HOME_DIR: homeDir },
+    });
+
+    const written = load(
+      await readFileContent(join(homeDir, getHermesagentGlobalDir(), "config.yaml")),
+    ) as Record<string, unknown>;
+    const model = written.model as Record<string, unknown>;
+    expect(model.default).toBe("local/ollama/qwen3-coder:30b");
+    expect(model.base_url).toBe("http://127.0.0.1:5678/v1");
+    const providers = written.custom_providers as Record<string, unknown>[];
+    expect(providers).toHaveLength(1);
+    expect(providers[0]).toMatchObject({ base_url: "http://127.0.0.1:5678/v1" });
   });
 });

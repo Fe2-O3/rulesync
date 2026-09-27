@@ -8,19 +8,67 @@ import { modelsProcessorToolTargetTuple } from "../../types/tool-target-tuples.j
 import { ToolTarget } from "../../types/tool-targets.js";
 import { formatError } from "../../utils/error.js";
 import type { Logger } from "../../utils/logger.js";
+import { HermesModels } from "./hermesagent-models.js";
 import { OpencodeModels } from "./opencode-models.js";
 import { RulesyncModels } from "./rulesync-models.js";
-import { ToolModels } from "./tool-models.js";
+import {
+  ToolModels,
+  ToolModelsForDeletionParams,
+  ToolModelsFromFileParams,
+  ToolModelsFromRulesyncModelsParams,
+  ToolModelsSettablePaths,
+} from "./tool-models.js";
 
 export type ModelsProcessorToolTarget = (typeof modelsProcessorToolTargetTuple)[number];
 
 export const ModelsProcessorToolTargetSchema = z.enum(modelsProcessorToolTargetTuple);
 
-// Single-tool map for the processor registry. Per-tool metadata (project vs
-// global support) returns when a second tool lands; OpenCode supports both.
-export const toolModelsFactories = new Map<ModelsProcessorToolTarget, unknown>([
-  ["opencode", { class: OpencodeModels }],
+type ToolModelsFactory = {
+  class: {
+    fromRulesyncModels(
+      params: ToolModelsFromRulesyncModelsParams & { global?: boolean },
+    ): ToolModels | Promise<ToolModels>;
+    fromFile(params: ToolModelsFromFileParams): Promise<ToolModels>;
+    forDeletion(params: ToolModelsForDeletionParams): ToolModels;
+    getSettablePaths(options?: { global?: boolean }): ToolModelsSettablePaths;
+  };
+  meta: {
+    supportsProject: boolean;
+    supportsGlobal: boolean;
+  };
+};
+
+export const toolModelsFactories = new Map<ModelsProcessorToolTarget, ToolModelsFactory>([
+  ["opencode", { class: OpencodeModels, meta: { supportsProject: true, supportsGlobal: true } }],
+  [
+    "hermesagent",
+    {
+      // Global-only, like Hermes MCP: no project-scoped models location exists.
+      class: HermesModels,
+      meta: { supportsProject: false, supportsGlobal: true },
+    },
+  ],
 ]);
+
+const allToolTargetKeys = [...toolModelsFactories.keys()];
+
+const modelsProcessorToolTargets: ToolTarget[] = allToolTargetKeys.filter(
+  (target) => toolModelsFactories.get(target)?.meta.supportsProject ?? false,
+);
+
+const modelsProcessorToolTargetsGlobal: ToolTarget[] = allToolTargetKeys.filter(
+  (target) => toolModelsFactories.get(target)?.meta.supportsGlobal ?? false,
+);
+
+type GetFactory = (target: ModelsProcessorToolTarget) => ToolModelsFactory;
+
+const defaultGetFactory: GetFactory = (target) => {
+  const factory = toolModelsFactories.get(target);
+  if (!factory) {
+    throw new Error(`Unsupported tool target: ${target}`);
+  }
+  return factory;
+};
 
 export class ModelsProcessor extends FeatureProcessor {
   private readonly toolTarget: ModelsProcessorToolTarget;
@@ -52,6 +100,10 @@ export class ModelsProcessor extends FeatureProcessor {
     this.global = global;
   }
 
+  private get factory(): ToolModelsFactory {
+    return defaultGetFactory(this.toolTarget);
+  }
+
   /** Absence is ordinary: the feature does nothing without its source file. */
   async loadRulesyncFiles(): Promise<RulesyncFile[]> {
     try {
@@ -70,10 +122,10 @@ export class ModelsProcessor extends FeatureProcessor {
   }: {
     forDeletion?: boolean;
   } = {}): Promise<ToolFile[]> {
-    const paths = OpencodeModels.getSettablePaths({ global: this.global });
+    const paths = this.factory.class.getSettablePaths({ global: this.global });
 
     if (forDeletion) {
-      const toolModels = OpencodeModels.forDeletion({
+      const toolModels = this.factory.class.forDeletion({
         outputRoot: this.outputRoot,
         relativeDirPath: paths.relativeDirPath,
         relativeFilePath: paths.relativeFilePath,
@@ -83,7 +135,7 @@ export class ModelsProcessor extends FeatureProcessor {
     }
 
     return [
-      await OpencodeModels.fromFile({
+      await this.factory.class.fromFile({
         outputRoot: this.outputRoot,
         validate: true,
         global: this.global,
@@ -102,7 +154,7 @@ export class ModelsProcessor extends FeatureProcessor {
     }
 
     return [
-      await OpencodeModels.fromRulesyncModels({
+      await this.factory.class.fromRulesyncModels({
         outputRoot: this.outputRoot,
         rulesyncModels,
         global: this.global,
@@ -123,8 +175,10 @@ export class ModelsProcessor extends FeatureProcessor {
     return rulesyncModelsList;
   }
 
-  // OpenCode supports both scopes; per-tool metadata returns with tool two.
-  static getToolTargets(_params: { global?: boolean } = {}): ToolTarget[] {
-    return ["opencode"];
+  static getToolTargets({ global = false }: { global?: boolean } = {}): ToolTarget[] {
+    if (global) {
+      return modelsProcessorToolTargetsGlobal;
+    }
+    return modelsProcessorToolTargets;
   }
 }

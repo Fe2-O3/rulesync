@@ -19,7 +19,7 @@ Rulesync supports both **generation** and **import** for All of the major AI cod
 | GitHub Copilot CLI        | copilotcli         | ✅ 🌏 |        | ✅ 🌏 🔧 |        |          |   ✅ 🌏   | ✅ 🌏  | ✅ 🌏 |    ✅ 🌏    |        |
 | Crush                     | crush              | ✅ 🌏 |   ✅   | ✅ 🌏 🔧 |        |          |           | ✅ 🌏  | ✅ 🌏 |    ✅ 🌏    |        |
 | Goose                     | goose              | ✅ 🌏 |        |  ✅ 🌏   |        |  ✅ 🌏   |   ✅ 🌏   |   ✅   | ✅ 🌏 |     🌏      |        |
-| Hermes Agent              | hermesagent        |  ✅   |   ✅   |  🌏 🔧   |        |    🌏    |   ✅ 🌏   |   🌏   |  🌏   |     🌏      |   ✅   |
+| Hermes Agent              | hermesagent        |  ✅   |   ✅   |  🌏 🔧   |   🌏   |    🌏    |   ✅ 🌏   |   🌏   |  🌏   |     🌏      |   ✅   |
 | Grok CLI                  | grokcli            | ✅ 🌏 |        |  ✅ 🌏   |        |  ✅ 🌏   |   ✅ 🌏   | ✅ 🌏  | ✅ 🌏 |    ✅ 🌏    |        |
 | Cursor                    | cursor             |  ✅   |   ✅   |  ✅ 🌏   |        |  ✅ 🌏   |   ✅ 🌏   | ✅ 🌏  | ✅ 🌏 |    ✅ 🌏    |   ✅   |
 | deepagents-cli            | deepagents         | ✅ 🌏 |        | ✅ 🌏 🔧 |        |          |   ✅ 🌏   | ✅ 🌏  | ✅ 🌏 |     🌏      |        |

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockLogger } from "../../test-utils/mock-logger.js";
 import { setupTestDirectory } from "../../test-utils/test-directories.js";
 import { ensureDir, readFileContent, writeFileContent } from "../../utils/file.js";
+import { HermesModels } from "./hermesagent-models.js";
 import { ModelsProcessor } from "./models-processor.js";
 import {
   OpencodeModels,
@@ -195,9 +196,38 @@ describe("models", () => {
   });
 
   it("supports opencode and rejects other targets", () => {
-    expect(ModelsProcessor.getToolTargets({ global: true })).toEqual(["opencode"]);
+    expect(ModelsProcessor.getToolTargets({ global: true })).toEqual(["opencode", "hermesagent"]);
     expect(() => new ModelsProcessor({ toolTarget: "cursor", logger: createMockLogger() })).toThrow(
       /Invalid tool target for ModelsProcessor/,
+    );
+  });
+
+  it("writes the Hermes model block and custom providers, keeping api_mode", async () => {
+    const toolModels = await HermesModels.fromRulesyncModels({
+      outputRoot: testDir,
+      rulesyncModels: rulesyncModels(testDir),
+      global: true,
+      logger: createMockLogger(),
+    });
+    toolModels.setFileContent("model:\n  api_mode: chat_completions\n  default: old\n");
+    const written = toolModels.getConfig();
+    const model = written.model as Record<string, unknown>;
+    expect(model.default).toBe("local/ollama/qwen3-coder:30b");
+    expect(model.provider).toBe("local");
+    expect(model.base_url).toBe("http://127.0.0.1:5678/v1");
+    expect(model.key_env).toBe("LOCAL_MODELS_KEY");
+    expect(model.api_mode).toBe("chat_completions");
+    const providers = written.custom_providers as Record<string, unknown>[];
+    expect(providers).toHaveLength(1);
+    expect(providers[0]).toMatchObject({
+      base_url: "http://127.0.0.1:5678/v1",
+      model: "ollama/qwen3-coder:30b",
+    });
+  });
+
+  it("Hermes is global-only", async () => {
+    await expect(HermesModels.fromFile({ outputRoot: testDir, global: false })).rejects.toThrow(
+      /global-only/,
     );
   });
 

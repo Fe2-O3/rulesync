@@ -1215,6 +1215,10 @@ const HERMES_CONFIG_DECLARATION: SharedConfigFileDeclaration = {
     commands: { kind: "replace-owned-keys", ownedKeys: ["plugins"] },
     subagents: { kind: "replace-owned-keys", ownedKeys: ["plugins"] },
     mcp: { kind: "replace-owned-keys", ownedKeys: ["mcp_servers"] },
+    // The models writer recomputes `model` from the existing block (Hermes-only
+    // siblings such as `api_mode` carried over, owned keys replaced) and merges
+    // `custom_providers` by `base_url`, so both keys are owned here.
+    models: { kind: "replace-owned-keys", ownedKeys: ["model", "custom_providers"] },
     // rulesync owns the native event keys inside `hooks`, not the whole
     // mapping — v0.20.0 nests the `outbound:` webhook registry there too. The
     // hooks writer recomputes the mapping from the existing file (sibling keys

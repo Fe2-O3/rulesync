@@ -99,7 +99,7 @@ The tables below show whether each tool supports a given feature (✅ = supporte
 | GitHub Copilot CLI        |  ✅   |        | ✅  |        |          |    ✅     |   ✅   |  ✅   |     ✅      |        |
 | Crush                     |  ✅   |   ✅   | ✅  |        |          |           |   ✅   |  ✅   |     ✅      |        |
 | Goose                     |  ✅   |        | ✅  |        |    ✅    |    ✅     |   ✅   |  ✅   |     ✅      |        |
-| Hermes Agent              |  ✅   |   ✅   | ✅  |        |    ✅    |    ✅     |   ✅   |  ✅   |     ✅      |   ✅   |
+| Hermes Agent              |  ✅   |   ✅   | ✅  |   ✅   |    ✅    |    ✅     |   ✅   |  ✅   |     ✅      |   ✅   |
 | Grok CLI                  |  ✅   |        | ✅  |        |    ✅    |    ✅     |   ✅   |  ✅   |     ✅      |        |
 | Cursor                    |  ✅   |   ✅   | ✅  |        |    ✅    |    ✅     |   ✅   |  ✅   |     ✅      |   ✅   |
 | deepagents-cli            |  ✅   |        | ✅  |        |          |    ✅     |   ✅   |  ✅   |     ✅      |        |

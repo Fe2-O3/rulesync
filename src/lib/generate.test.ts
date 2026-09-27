@@ -1857,11 +1857,11 @@ describe("GENERATION_STEP_GRAPH", () => {
       "subagents",
       "mcp",
       "models",
-      "hooks",
-      // Checks moved out of the unordered tail once Takt started writing
-      // `workflow_overrides` into the config.yaml that MCP and permissions
-      // share.
+      // Checks runs before hooks now that models also writes the Hermes
+      // `config.yaml` hooks merges into; the relative order of checks and
+      // hooks is otherwise unconstrained (different files).
       "checks",
+      "hooks",
       "permissions",
       "rules",
     ]);
