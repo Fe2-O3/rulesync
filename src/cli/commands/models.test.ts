@@ -7,7 +7,7 @@ import { mergeDiscoveredModels } from "../../features/models/models-source-io.js
 import { createMockLogger } from "../../test-utils/mock-logger.js";
 import { setupTestDirectory } from "../../test-utils/test-directories.js";
 import { ensureDir, readFileContent, writeFileContent } from "../../utils/file.js";
-import { modelsFetchCommand } from "./models.js";
+import { modelsDiscoverCommand, modelsFetchCommand } from "./models.js";
 
 function stubFetch(json: unknown, ok = true, status = 200): typeof fetch {
   return (async () => ({ ok, status, json: async () => json })) as unknown as typeof fetch;
@@ -54,6 +54,36 @@ describe("models fetch/discover", () => {
         fetchFn: stubFetch({ providers: {} }),
       }),
     ).rejects.toThrow(/no provider/);
+  });
+
+  it("discovers model ids and fills reported limits only", async () => {
+    await writeFileContent(
+      join(testDir, ".rulesync", "models.jsonc"),
+      JSON.stringify({
+        providers: {
+          local: {
+            api: "http://127.0.0.1:5678/v1",
+            models: { known: { id: "known", limit: { context: 1 } } },
+          },
+        },
+      }),
+    );
+    await modelsDiscoverCommand(createMockLogger(), {
+      provider: "local",
+      outputRoot: testDir,
+      fetchFn: stubFetch({
+        data: [
+          { id: "known", max_model_len: 999 },
+          { id: "fresh", context_length: 42 },
+          { id: "mystery" },
+        ],
+      }),
+    });
+    const models = JSON.parse(await readFileContent(join(testDir, ".rulesync", "models.jsonc")))
+      .providers.local.models;
+    expect(models.known.limit).toEqual({ context: 1 });
+    expect(models.fresh.limit).toEqual({ context: 42 });
+    expect(models.mystery).toEqual({ id: "mystery" });
   });
 
   it("mergeDiscoveredModels fills missing limits without touching set values", () => {

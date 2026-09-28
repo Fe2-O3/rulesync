@@ -579,9 +579,12 @@ The `models` command keeps `.rulesync/models.jsonc` populated without hand-copyi
 ```bash
 # Copy one provider block from models.dev into the source file
 rulesync models fetch openai
+
+# Fill model ids and server-reported limits from a live endpoint
+rulesync models discover local
 ```
 
-`fetch` writes the provider block verbatim (models.dev field names are the source schema), replacing any block of the same name. It edits the source file in place and preserves its comments.
+`fetch` writes the provider block verbatim (models.dev field names are the source schema), replacing any block of the same name. `discover` queries `GET <api>/models` of a provider declared in the source file — authenticating with the first `env` variable when set — adds missing model ids, and fills only the limits the server reports (`max_model_len`, `context_length`, `max_context_length`); a limit no source reports stays unset, never guessed. Both edit the source file in place and preserve its comments.
 
 ## Convert Command
 
