@@ -26,6 +26,9 @@ const TARGETS_WITHOUT_GITIGNORE_ENTRIES = new Set([
   "agentsskills",
   "augmentcode-legacy",
   "claudecode-legacy",
+  // Aider's metadata file carries only limits and costs (no secrets), so it
+  // stays committable like the other models outputs.
+  "aider",
 ]);
 
 describe("GITIGNORE_ENTRY_REGISTRY", () => {

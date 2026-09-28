@@ -17,6 +17,7 @@ export type ToolDisplayEntry = {
 export const TOOL_DISPLAY: ReadonlyArray<ToolDisplayEntry> = [
   { key: "agentsmd", label: "AGENTS.md", group: "standard" },
   { key: "agentsskills", label: "AgentsSkills", group: "standard" },
+  { key: "aider", label: "Aider", group: "ai" },
   { key: "amp", label: "Amp", group: "ai" },
   { key: "bob", label: "IBM Bob", group: "ai" },
   { key: "claudecode", label: "Claude Code", group: "ai" },

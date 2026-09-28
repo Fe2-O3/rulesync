@@ -88,6 +88,7 @@ The tables below show whether each tool supports a given feature (✅ = supporte
 
 | Tool                      | rules | ignore | mcp | models | commands | subagents | skills | hooks | permissions | checks |
 | ------------------------- | :---: | :----: | :-: | :----: | :------: | :-------: | :----: | :---: | :---------: | :----: |
+| Aider                     |       |        |     |   ✅   |          |           |        |       |             |        |
 | Amp                       |  ✅   |        | ✅  |        |          |           |   ✅   |  ✅   |     ✅      |   ✅   |
 | IBM Bob                   |  ✅   |   ✅   | ✅  |        |    ✅    |           |   ✅   |  ✅   |             |        |
 | Claude Code               |  ✅   |   ✅   | ✅  |        |    ✅    |    ✅     |   ✅   |  ✅   |     ✅      |        |

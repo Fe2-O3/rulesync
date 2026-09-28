@@ -12,6 +12,7 @@ import { modelsProcessorToolTargetTuple } from "../../types/tool-target-tuples.j
 import { ToolTarget } from "../../types/tool-targets.js";
 import { formatError } from "../../utils/error.js";
 import type { Logger } from "../../utils/logger.js";
+import { AiderModels } from "./aider-models.js";
 import { ContinueModels } from "./continue-models.js";
 import { CrushModels } from "./crush-models.js";
 import { GooseModels } from "./goose-models.js";
@@ -121,6 +122,13 @@ export const toolModelsFactories = new Map<ModelsProcessorToolTarget, ToolModels
       // Global-only: pi documents only the user models.json.
       class: PiModels,
       meta: { supportsProject: false, supportsGlobal: true },
+    },
+  ],
+  [
+    "aider",
+    {
+      class: AiderModels,
+      meta: { supportsProject: true, supportsGlobal: true },
     },
   ],
 ]);

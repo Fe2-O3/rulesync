@@ -196,12 +196,40 @@ describe("e2e: models", () => {
     expect(written.providerProtocol).toEqual({ local: "openai" });
   });
 
+  it("generates Aider metadata from models.jsonc", async () => {
+    const testDir = getTestDir();
+    await writeFileContent(
+      join(testDir, ".rulesync", "models.jsonc"),
+      JSON.stringify({
+        providers: {
+          local: {
+            api: "http://127.0.0.1:5678/v1",
+            models: {
+              "ollama/qwen3-coder:30b": {
+                id: "ollama/qwen3-coder:30b",
+                limit: { context: 131072, output: 16384 },
+              },
+            },
+          },
+        },
+      }),
+    );
+
+    await runGenerate({ target: "aider", features: "models" });
+
+    const written = JSON.parse(await readFileContent(join(testDir, ".aider.model.metadata.json")));
+    expect(written["openai/ollama/qwen3-coder:30b"]).toMatchObject({
+      max_input_tokens: 131072,
+      litellm_provider: "openai",
+    });
+  });
+
   it("covers every models target in the generate matrix", () => {
     // hermesagent, goose, and pi are global-only, so they are covered by
     // the global tests below rather than this project-scope matrix.
     assertGenerateMatrixCoversTargets({
       processor: ModelsProcessor,
-      testedTargets: ["opencode", "crush", "zed", "continue", "qwencode"],
+      testedTargets: ["opencode", "crush", "zed", "continue", "qwencode", "aider"],
     });
   });
 });

@@ -140,6 +140,7 @@ export const modelsProcessorToolTargetTuple = [
   "goose",
   "qwencode",
   "pi",
+  "aider",
 ] as const;
 
 export const commandsProcessorToolTargetTuple = [

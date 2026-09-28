@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockLogger } from "../../test-utils/mock-logger.js";
 import { setupTestDirectory } from "../../test-utils/test-directories.js";
 import { ensureDir, readFileContent, writeFileContent } from "../../utils/file.js";
+import { AiderModels } from "./aider-models.js";
 import { ContinueModels } from "./continue-models.js";
 import { CrushModels } from "./crush-models.js";
 import { GooseModels } from "./goose-models.js";
@@ -299,6 +300,21 @@ describe("models", () => {
     });
   });
 
+  it("writes Aider entries with the openai prefix and per-token costs", async () => {
+    const toolModels = await AiderModels.fromRulesyncModels({
+      outputRoot: testDir,
+      rulesyncModels: rulesyncModels(testDir),
+      logger: createMockLogger(),
+    });
+    const written = JSON.parse(toolModels.getFileContent());
+    expect(written["openai/ollama/qwen3-coder:30b"]).toMatchObject({
+      max_input_tokens: 131072,
+      max_output_tokens: 16384,
+      litellm_provider: "openai",
+      mode: "chat",
+    });
+  });
+
   it("supports opencode and rejects other targets", () => {
     expect(ModelsProcessor.getToolTargets({ global: true })).toEqual([
       "opencode",
@@ -309,6 +325,7 @@ describe("models", () => {
       "goose",
       "qwencode",
       "pi",
+      "aider",
     ]);
     expect(() => new ModelsProcessor({ toolTarget: "cursor", logger: createMockLogger() })).toThrow(
       /Invalid tool target for ModelsProcessor/,

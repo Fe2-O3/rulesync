@@ -67,6 +67,7 @@ describe("tool targets", () => {
         "zoocode",
         "dsh",
         "claudecode-plugin",
+        "aider",
         "agentsskills",
       ];
 
