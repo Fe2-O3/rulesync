@@ -572,6 +572,17 @@ rulesync fetch anthropics/skills --no-prune
 rulesync fetch owner/repo:packages/my-package
 ```
 
+## Models Command
+
+The `models` command keeps `.rulesync/models.jsonc` populated without hand-copying.
+
+```bash
+# Copy one provider block from models.dev into the source file
+rulesync models fetch openai
+```
+
+`fetch` writes the provider block verbatim (models.dev field names are the source schema), replacing any block of the same name. It edits the source file in place and preserves its comments.
+
 ## Convert Command
 
 The `convert` command converts configuration files from one AI tool directly to one or more destination tools **without creating `.rulesync/` files on disk**. The intermediate rulesync representation is kept in memory only.

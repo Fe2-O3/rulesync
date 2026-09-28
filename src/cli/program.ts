@@ -16,6 +16,7 @@ import { importCommand, ImportOptions } from "./commands/import.js";
 import { initCommand } from "./commands/init.js";
 import { INSTALL_MODES, InstallMode, installCommand } from "./commands/install.js";
 import { mcpCommand } from "./commands/mcp.js";
+import { modelsFetchCommand } from "./commands/models.js";
 import { releaseNotesCommand, type ReleaseNotesCommandOptions } from "./commands/release-notes.js";
 import { resolveGitignoreTargets } from "./commands/resolve-gitignore-targets.js";
 import { updateCommand, UpdateCommandOptions } from "./commands/update.js";
@@ -226,6 +227,21 @@ export function createProgram(): Command {
     .action(
       wrapCommand("convert", "CONVERT_FAILED", async (logger, options) => {
         await convertCommand(logger, options as ConvertOptions);
+      }),
+    );
+
+  const models = program
+    .command("models")
+    .description("Manage model providers in .rulesync/models.jsonc");
+
+  models
+    .command("fetch <provider>")
+    .description("Copy one provider block from models.dev into the source file")
+    .option("-V, --verbose", "Verbose output")
+    .option("-s, --silent", "Suppress all output")
+    .action(
+      wrapCommand("models fetch", "MODELS_FETCH_FAILED", async (logger, _o, _g, positionalArgs) => {
+        await modelsFetchCommand(logger, { provider: positionalArgs[0] as string });
       }),
     );
 
