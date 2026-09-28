@@ -131,7 +131,7 @@ The tables below show whether each tool supports a given feature (✅ = supporte
 | Devin Desktop             |  ✅   |   ✅   | ✅  |        |    ✅    |    ✅     |   ✅   |  ✅   |     ✅      |        |
 | Warp                      |  ✅   |   ✅   | ✅  |        |    ✅    |           |   ✅   |       |     ✅      |        |
 | Replit                    |  ✅   |        |     |        |          |           |   ✅   |       |             |        |
-| Pi Coding Agent           |  ✅   |        |     |        |    ✅    |           |   ✅   |  ✅   |     ✅      |        |
+| Pi Coding Agent           |  ✅   |        |     |   ✅   |    ✅    |           |   ✅   |  ✅   |     ✅      |        |
 | Zed                       |  ✅   |   ✅   | ✅  |   ✅   |          |           |   ✅   |       |     ✅      |        |
 | ZCode (Z.ai)              |  ✅   |        | ✅  |        |    ✅    |    ✅     |   ✅   |  ✅   |             |        |
 | Pool (Poolside)           |  ✅   |        | ✅  |        |          |    ✅     |   ✅   |  ✅   |     ✅      |        |

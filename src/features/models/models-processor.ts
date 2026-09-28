@@ -17,6 +17,7 @@ import { CrushModels } from "./crush-models.js";
 import { GooseModels } from "./goose-models.js";
 import { HermesModels } from "./hermesagent-models.js";
 import { OpencodeModels } from "./opencode-models.js";
+import { PiModels } from "./pi-models.js";
 import { QwenModels } from "./qwen-models.js";
 import {
   type ModelsDefault,
@@ -112,6 +113,14 @@ export const toolModelsFactories = new Map<ModelsProcessorToolTarget, ToolModels
     {
       class: QwenModels,
       meta: { supportsProject: true, supportsGlobal: true },
+    },
+  ],
+  [
+    "pi",
+    {
+      // Global-only: pi documents only the user models.json.
+      class: PiModels,
+      meta: { supportsProject: false, supportsGlobal: true },
     },
   ],
 ]);

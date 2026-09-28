@@ -16,6 +16,7 @@ import {
   toOpencodeDefault,
   toOpencodeProviders,
 } from "./opencode-models.js";
+import { PiModels } from "./pi-models.js";
 import { QwenModels } from "./qwen-models.js";
 import {
   forTargetModelConfig,
@@ -278,6 +279,26 @@ describe("models", () => {
     expect(written.providerProtocol).toEqual({ local: "openai" });
   });
 
+  it("writes pi providers with $VAR keys and explicit costs", async () => {
+    const toolModels = await PiModels.fromRulesyncModels({
+      outputRoot: testDir,
+      rulesyncModels: rulesyncModels(testDir),
+      global: true,
+      logger: createMockLogger(),
+    });
+    const written = JSON.parse(toolModels.getFileContent());
+    expect(written.providers.local).toMatchObject({
+      baseUrl: "http://127.0.0.1:5678/v1",
+      api: "openai-completions",
+      apiKey: "$LOCAL_MODELS_KEY",
+    });
+    expect(written.providers.local.models[0]).toMatchObject({
+      id: "ollama/qwen3-coder:30b",
+      contextWindow: 131072,
+      cost: { input: 0, output: 0 },
+    });
+  });
+
   it("supports opencode and rejects other targets", () => {
     expect(ModelsProcessor.getToolTargets({ global: true })).toEqual([
       "opencode",
@@ -287,6 +308,7 @@ describe("models", () => {
       "continue",
       "goose",
       "qwencode",
+      "pi",
     ]);
     expect(() => new ModelsProcessor({ toolTarget: "cursor", logger: createMockLogger() })).toThrow(
       /Invalid tool target for ModelsProcessor/,
